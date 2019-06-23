@@ -1,0 +1,29 @@
+{
+    "name": "firevel/firestore-cache-driver",
+    "description": "Firestore cache driver for Laravel app running inside Google App Engine.",
+    "keywords": ["laravel", "cache", "driver", "firestore", "app engine", "google cloud", "firevel"],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "google/cloud-firestore": "^1.5",
+        "grpc/grpc": "^1.19"
+    },
+    "authors": [
+        {
+            "name": "Michael Slowik",
+            "email": "michael.slowik@firevel.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Firevel\\FirestoreCacheDriver\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Firevel\\FirestoreCacheDriver\\FirestoreCacheServiceProvider"
+            ]
+        }
+    }
+}
