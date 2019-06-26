@@ -2,7 +2,7 @@
 
 namespace Firevel\FirestoreCacheDriver;
 
-use App\Extensions\FirestoreCache;
+use Firevel\FirestoreCacheDriver\FirestoreCache;
 use Google\Cloud\Firestore\FirestoreClient;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
