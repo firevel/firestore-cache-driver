@@ -1,0 +1,157 @@
+name: "Run unit tests"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - master
+
+jobs:
+  test:
+    name: "Unit test (Laravel ${{ matrix.laravel }}, PHP ${{ matrix.php }}, ${{ matrix.release }})"
+    runs-on: ubuntu-latest
+
+    # Firestore emulator
+    services:
+      firestore:
+        image: mtlynch/firestore-emulator-docker
+        ports:
+          - 8080:8080
+        env:
+          PORT: 8080
+          FIRESTORE_PROJECT_ID: project-test
+
+    # Run in our self-created container, that contains grpc
+    container:
+      image: ghcr.io/roelofr/php-grpc:${{ matrix.php }}
+      volumes:
+        - ${{ github.action_path }}:/var/www/testing
+
+    # Test across PHP and Laravel versions
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix:
+        php:
+          - '7.2'
+          - '7.3'
+          - '7.4'
+          - '8.0'
+
+        laravel:
+          - '5.8'
+          - '6.0'
+          - '7.0'
+          - '8.0'
+
+        release:
+          - dist
+          - source
+
+        include:
+          # Laravel => Testbench mapping
+          - laravel: '5.8'
+            testbench: '3.8'
+          - laravel: '6.0'
+            testbench: '4.0'
+          - laravel: '7.0'
+            testbench: '5.0'
+          - laravel: '8.0'
+            testbench: '6.0'
+
+          # Composer mapping
+          - release: dist
+            update-flag: '--prefer-dist --prefer-stable'
+          - release: source
+            update-flag: '--prefer-source'
+
+          # Only push for the one stable version
+          - php: '8.0'
+            laravel: '8.0'
+            release: dist
+            stable: true
+
+        # Ignore versions that don't work
+        exclude:
+          # PHP 7.2, 7.3 >= Laravel 6.0
+          - php: '7.2'
+            laravel: '6.0'
+          - php: '7.2'
+            laravel: '7.0'
+          - php: '7.2'
+            laravel: '8.0'
+          - php: '7.3'
+            laravel: '6.0'
+          - php: '7.3'
+            laravel: '7.0'
+          - php: '7.3'
+            laravel: '8.0'
+
+          # PHP 8.0 below 6.0
+          - php: '8.0'
+            laravel: '5.8'
+
+    # Run the job
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Determine composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Setup Composer cache
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ matrix.laravel }}-${{ matrix.php }}-${{ matrix.package-release }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            composer-${{ runner.os }}-${{ matrix.laravel }}-${{ matrix.php }}-${{ matrix.package-release }}-
+            composer-${{ runner.os }}-${{ matrix.laravel }}-${{ matrix.php }}-
+            composer-${{ runner.os }}-${{ matrix.laravel }}-
+            composer-${{ runner.os }}-
+
+      - name: Configure Laravel ${{ matrix.laravel }} with testbench ${{ matrix.testbench }}
+        run: |
+          composer require \
+            --no-update \
+            --ignore-platform-req=php \
+            illuminate/contracts:^${{ matrix.laravel }} \
+            illuminate/support:^${{ matrix.laravel }}
+          composer require \
+            --dev \
+            --no-update \
+            --ignore-platform-req=php \
+            orchestra/testbench:^${{ matrix.testbench }}
+
+      - name: Install composer dependencies
+        env:
+          UPDATE_FLAGS: ${{ matrix.update-flag }}
+        run: |
+          composer update \
+            --no-suggest \
+            --no-progress \
+            --no-interaction \
+            $UPDATE_FLAGS \
+            --ignore-platform-req=php
+
+      - name: Configure Firestore in PHPUnit
+        run: sed -i 's/localhost:8081/firestore:8080/' phpunit.xml
+
+      - name: Run unit tests
+        id: phpunit
+        run: |
+          COVERAGE_CLOVER="$( tempfile )"
+          echo "::set-output name=clover::${COVERAGE_CLOVER}"
+          vendor/bin/phpunit --coverage-clover="$COVERAGE_CLOVER"
+
+      - name: Determine coverage
+        uses: slavcodev/coverage-monitor-action@1.1.0
+        if: github.event_name == 'pull_request' && matrix.stable
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          clover_file: ${{ steps.phpunit.outputs.clover }}
+          threshold_alert: 75
+          threshold_warning: 95
+
