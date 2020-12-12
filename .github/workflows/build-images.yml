@@ -1,0 +1,53 @@
+name: "Build Docker images"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker-build:
+    name: Build Docker image for PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '7.2'
+          - '7.3'
+          - '7.4'
+          - '8.0'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Login to GitHub Packages Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: docker.pkg.github.com
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine build
+        id: determine-name
+        run: |
+          sed -i "s/FROM php:cli/FROM php:${PHP_VERSION}-cli/" .github/Dockerfile
+          echo "::set-output name=image-name::docker.pkg.github.com/${GITHUB_REPOSITORY}/php-cli:${PHP_VERSION}"
+        env:
+          PHP_VERSION: ${{ matrix.php }}
+
+      - name: Pull images
+        run: docker pull -t ${DOCKER_IMAGE}
+        continue-on-error: true
+        env:
+          DOCKER_IMAGE: ${{ steps.determine-name.outputs.image-name }}
+
+      - name: Build images
+        timeout-minutes: 30
+        run: docker build -t ${DOCKER_IMAGE} .github/
+        env:
+          DOCKER_IMAGE: ${{ steps.determine-name.outputs.image-name }}
+
+      - name: Upload images
+        run: docker push ${DOCKER_IMAGE}
+        env:
+          DOCKER_IMAGE: ${{ steps.determine-name.outputs.image-name }}
