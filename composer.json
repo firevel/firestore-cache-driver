@@ -11,6 +11,9 @@
         "illuminate/contracts": "^5.8 || ^6.0 || ^7.0 || ^8.0",
         "illuminate/support": "^5.8 || ^6.0 || ^7.0 || ^8.0"
     },
+    "require-dev": {
+        "orchestra/testbench": "^3.8 || ^4.0 || ^5.0 || ^6.0"
+    },
     "authors": [
         {
             "name": "Michael Slowik",
@@ -22,11 +25,22 @@
             "Firevel\\FirestoreCacheDriver\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\Firevel\\FirestoreCacheDriver\\": "tests/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [
                 "Firevel\\FirestoreCacheDriver\\FirestoreCacheServiceProvider"
             ]
         }
+    },
+    "scripts": {
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "phpunit"
+        ]
     }
 }
