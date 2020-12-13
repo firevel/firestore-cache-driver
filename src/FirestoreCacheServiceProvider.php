@@ -20,7 +20,7 @@ class FirestoreCacheServiceProvider extends ServiceProvider
             $store = $app['config']['cache.default'];
             return Cache::repository(
                 new FirestoreCache(
-                    new FirestoreClient,
+                    new FirestoreClient(),
                     $app['config']["cache.stores.{$store}.collection"],
                     $this->app['config']['cache.prefix']
                 )
