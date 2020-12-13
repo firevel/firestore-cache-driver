@@ -5,8 +5,11 @@
     "type": "library",
     "license": "MIT",
     "require": {
+        "php": "^7.2 || ^8.0",
         "google/cloud-firestore": "^1.14",
-        "grpc/grpc": "^1.30"
+        "grpc/grpc": "^1.30",
+        "illuminate/contracts": "^5.8 || ^6.0 || ^7.0 || ^8.0",
+        "illuminate/support": "^5.8 || ^6.0 || ^7.0 || ^8.0"
     },
     "authors": [
         {
