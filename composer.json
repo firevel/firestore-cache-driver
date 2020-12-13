@@ -40,6 +40,12 @@
     "scripts": {
         "test": [
             "Composer\\Config::disableProcessTimeout",
+            "docker rm --force firestore-emulator || true",
+            "docker run -d --name firestore-emulator -e \"FIRESTORE_PROJECT_ID=project-test\" -e \"PORT=8080\" -p 127.0.0.1:8081:8080 mtlynch/firestore-emulator-docker",
+            "phpunit"
+        ],
+        "test-only": [
+            "Composer\\Config::disableProcessTimeout",
             "phpunit"
         ]
     }

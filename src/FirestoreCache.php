@@ -40,9 +40,9 @@ class FirestoreCache implements Store
     /**
      * Create a new firestore cache store instance.
      *
-     * @param  \Illuminate\Filesystem\Filesystem  $files
-     * @param  string  $collection
-     * @param  string  $prefix
+     * @param FirestoreClient $client
+     * @param string $collection
+     * @param string $prefix
      * @return void
      */
     public function __construct(FirestoreClient $client, $collection = 'cache', $prefix = '')
@@ -83,7 +83,7 @@ class FirestoreCache implements Store
      */
     public function expired($item)
     {
-        return $item->expiration->get()->getTimestamp() < time();
+        return $item->expiration->get() < now();
     }
 
     /**
