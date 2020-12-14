@@ -2,19 +2,17 @@
 
 namespace Firevel\FirestoreCacheDriver;
 
-use Carbon\Carbon;
 use DateTime;
-use Exception;
 use Google\Cloud\Core\Timestamp;
 use Google\Cloud\Firestore\FirestoreClient;
 use Illuminate\Cache\RetrievesMultipleKeys;
 use Illuminate\Contracts\Cache\Store;
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\InteractsWithTime;
 
 class FirestoreCache implements Store
 {
-    use InteractsWithTime, RetrievesMultipleKeys;
+    use InteractsWithTime;
+    use RetrievesMultipleKeys;
 
     /**
      * Firestore client.
@@ -40,9 +38,9 @@ class FirestoreCache implements Store
     /**
      * Create a new firestore cache store instance.
      *
-     * @param  \Illuminate\Filesystem\Filesystem  $files
-     * @param  string  $collection
-     * @param  string  $prefix
+     * @param FirestoreClient $client
+     * @param string $collection
+     * @param string $prefix
      * @return void
      */
     public function __construct(FirestoreClient $client, $collection = 'cache', $prefix = '')
@@ -83,7 +81,7 @@ class FirestoreCache implements Store
      */
     public function expired($item)
     {
-        return $item->expiration->get()->getTimestamp() < time();
+        return $item->expiration->get() < now();
     }
 
     /**
@@ -96,7 +94,7 @@ class FirestoreCache implements Store
     {
         $data = $this
             ->getCollection()
-            ->document($this->getPrefix().$key)
+            ->document($this->getPrefix() . $key)
             ->snapshot()
             ->data();
 
@@ -128,7 +126,7 @@ class FirestoreCache implements Store
 
         $this
             ->getCollection()
-            ->document($this->getPrefix().$key)
+            ->document($this->getPrefix() . $key)
             ->set($payload);
 
         return true;
@@ -190,7 +188,7 @@ class FirestoreCache implements Store
      */
     public function forget($key)
     {
-        $this->getCollection()->document($this->getPrefix().$key)->delete();
+        $this->getCollection()->document($this->getPrefix() . $key)->delete();
     }
 
     /**
@@ -238,7 +236,7 @@ class FirestoreCache implements Store
         return $this->prefix;
     }
 
-    /** 
+    /**
      * Get a collection reference.
      *
      * @return CollectionReference
