@@ -96,7 +96,7 @@ class FirestoreCache implements Store
     {
         $data = $this
             ->getCollection()
-            ->document($this->getPrefix().$key)
+            ->document($this->getPrefix().md5($key))
             ->snapshot()
             ->data();
 
@@ -128,7 +128,7 @@ class FirestoreCache implements Store
 
         $this
             ->getCollection()
-            ->document($this->getPrefix().$key)
+            ->document($this->getPrefix().md5($key))
             ->set($payload);
 
         return true;
@@ -190,7 +190,7 @@ class FirestoreCache implements Store
      */
     public function forget($key)
     {
-        $this->getCollection()->document($this->getPrefix().$key)->delete();
+        $this->getCollection()->document($this->getPrefix().md5($key))->delete();
     }
 
     /**
